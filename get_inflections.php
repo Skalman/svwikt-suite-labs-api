@@ -227,9 +227,9 @@ function get_page_inflections($title) {
 				$href = $a->getAttribute('href');
 				$target = null;
 				if ($a->getAttribute('class') === 'new') {
-					preg_match('#^/w/index.php?title=([^&]+)&action=edit&redlink=1$#', $href, $target);
+					preg_match('/^\/w\/index\.php\?title=([^&]+)&action=edit&redlink=1$/', $href, $target);
 				} else {
-					preg_match('<^/wiki/([^#]+)(#.*)?$>', $href, $target);
+					preg_match('/^\/wiki\/([^#]+)(#.*)?$/', $href, $target);
 				}
 				if (!$target)
 					continue;
