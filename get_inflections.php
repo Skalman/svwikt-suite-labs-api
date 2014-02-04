@@ -130,37 +130,40 @@ foreach ($to_parse_and_insert as $title) {
 }
 $m->autocommit(true);
 
-// GET FROM TABLE
-$get_titles_sql = escape_to_list($m, $to_get_from_table);
-profile_start();
-$template_uses = mysqli_query_to_array($m,
-	"SELECT
-		page_title,
-		page_touched,
-		template,
-		group_concat(form separator '|') AS forms,
-		group_concat(type separator '|') AS types
-	FROM page
-	INNER JOIN template_use USING(page_title)
-	INNER JOIN inflection USING(use_id)
-	WHERE page_title IN ($get_titles_sql)
-	GROUP BY use_id;");
-$debug['timing-get_from_table'] = profile_end();
 
-foreach ($template_uses as $use) {
-	$title = $use['page_title'];
-	$response[$title]['page_touched'] = $use['page_touched'];
-	$forms = explode('|', $use['forms']);
-	$types = explode('|', $use['types']);
-	$response[$title]['templates'][] = array(
-		'template' => $use['template'],
-		'inflections' => array_map(function ($form, $type) {
-			return array(
-				'value' => $form,
-				'type' => $type,
-			);
-		}, $forms, $types),
-	);
+// GET FROM TABLE
+if ($to_get_from_table) {
+	$get_titles_sql = escape_to_list($m, $to_get_from_table);
+	profile_start();
+	$template_uses = mysqli_query_to_array($m,
+		"SELECT
+			page_title,
+			page_touched,
+			template,
+			group_concat(form separator '|') AS forms,
+			group_concat(type separator '|') AS types
+		FROM page
+		INNER JOIN template_use USING(page_title)
+		INNER JOIN inflection USING(use_id)
+		WHERE page_title IN ($get_titles_sql)
+		GROUP BY use_id;");
+	$debug['timing-get_from_table'] = profile_end();
+
+	foreach ($template_uses as $use) {
+		$title = $use['page_title'];
+		$response[$title]['page_touched'] = $use['page_touched'];
+		$forms = explode('|', $use['forms']);
+		$types = explode('|', $use['types']);
+		$response[$title]['templates'][] = array(
+			'template' => $use['template'],
+			'inflections' => array_map(function ($form, $type) {
+				return array(
+					'value' => $form,
+					'type' => $type,
+				);
+			}, $forms, $types),
+		);
+	}
 }
 
 
