@@ -109,10 +109,11 @@ foreach ($to_parse_and_insert as $title) {
 	));
 	foreach ($infl as $per_template) {
 		$m->query(sprintf(
-			"INSERT INTO $inflection_db.template_use (page_title, template)
-			VALUES ('%s', '%s');",
+			"INSERT INTO $inflection_db.template_use (page_title, template, is_dubious)
+			VALUES ('%s', '%s', %s);",
 			$m->real_escape_string($title),
-			$m->real_escape_string($per_template['template'])
+			$m->real_escape_string($per_template['template']),
+			@$per_template['is_dubious'] ? '1' : '0'
 		));
 		$m->query(sprintf(
 			"INSERT INTO $inflection_db.inflection (use_id, form, type)
@@ -140,11 +141,12 @@ if ($to_get_from_table) {
 			page_title,
 			page_touched,
 			template,
+			is_dubious,
 			group_concat(form separator '|') AS forms,
 			group_concat(type separator '|') AS types
 		FROM page
-		INNER JOIN template_use USING(page_title)
-		INNER JOIN inflection USING(use_id)
+		LEFT JOIN template_use USING(page_title)
+		LEFT JOIN inflection USING(use_id)
 		WHERE page_title IN ($get_titles_sql)
 		GROUP BY use_id;");
 	$debug['timing-get_from_table'] = profile_end();
@@ -152,9 +154,14 @@ if ($to_get_from_table) {
 	foreach ($template_uses as $use) {
 		$title = $use['page_title'];
 		$response[$title]['page_touched'] = $use['page_touched'];
+		if ($use['template'] === null) {
+			// no inflections
+			$response[$title]['templates'] = array();
+			continue;
+		}
 		$forms = explode('|', $use['forms']);
 		$types = explode('|', $use['types']);
-		$response[$title]['templates'][] = array(
+		$formatted_use = array(
 			'template' => $use['template'],
 			'inflections' => array_map(function ($form, $type) {
 				return array(
@@ -163,6 +170,9 @@ if ($to_get_from_table) {
 				);
 			}, $forms, $types),
 		);
+		if ($use['is_dubious'] === '1')
+			$formatted_use['is_dubious'] = true;
+		$response[$title]['templates'][] = $formatted_use;
 	}
 }
 
@@ -204,6 +214,7 @@ function get_page_inflections($title) {
 			continue;
 		$template = $template[2];
 		$template_inflections = array();
+		$is_dubious = strpos($table_class, 'grammar-warning') !== false;
 
 		$spans = $table->getElementsByTagName('span');
 		foreach ($spans as $span) {
@@ -241,10 +252,15 @@ function get_page_inflections($title) {
 			}
 		}
 
-		$inflections[] = array(
+		$template_use = array(
 			'template' => $template,
 			'inflections' => $template_inflections,
 		);
+
+		if ($is_dubious)
+			$template_use['is_dubious'] = $is_dubious;
+
+		$inflections[] = $template_use;
 	}
 
 	return array(

@@ -8,6 +8,7 @@ CREATE TABLE template_use (
  use_id int unsigned NOT NULL AUTO_INCREMENT,
  page_title VARBINARY(255) NOT NULL,
  template VARBINARY(255) NOT NULL,
+ is_dubious tinyint unsigned NOT NULL,
  PRIMARY KEY (use_id),
  FOREIGN KEY page_title (page_title)
   REFERENCES page(page_title)
