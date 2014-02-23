@@ -88,7 +88,7 @@ if ($to_delete) {
 	$m->query("DELETE FROM $inflection_db.page
 		WHERE page.page_title IN ($delete_titles_sql);");
 	if ($m->error) output($m->error);
-	$response['deleted'] = $to_delete;
+	$debug['deleted'][] = $to_delete;
 }
 
 // PARSE AND INSERT
