@@ -22,7 +22,7 @@ function error($message) {
 }
 
 $cnf = parse_ini_file('/data/project/svwiktionary/replica.my.cnf');
-$inflection_db = "{$cnf['user']}__inflections";
+$inflection_db = 'p50380g50552__inflections';
 // tables: page, template_use, inflection
 
 function escape_to_list($m, $array) {
